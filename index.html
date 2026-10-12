@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102b28">
+  <meta name="description" content="EMF Accounting workspace demo for SME bookkeeping, invoicing, and financial summaries.">
+  <title>EMF Books | Accounting workspace</title>
+  <style>
+    :root {
+      --ink: #1b2e2a;
+      --muted: #77837d;
+      --deep: #102b28;
+      --green: #17483d;
+      --green-2: #25715b;
+      --green-pale: #edf4ee;
+      --lime: #c9dd88;
+      --gold: #c8a56b;
+      --paper: #f5f7f4;
+      --white: #fff;
+      --line: #e4e9e4;
+      --red: #b6554c;
+      --red-pale: #fbefed;
+      --blue: #587da0;
+      --shadow: 0 12px 35px rgba(22, 46, 39, .07);
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    .app { min-height: 100vh; }
+    .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 5; display: flex; width: 248px; flex-direction: column; padding: 25px 16px 18px; background: var(--deep); color: white; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 10px 27px; border-bottom: 1px solid rgba(255,255,255,.11); }
+    .brand-mark { display: grid; width: 39px; height: 39px; place-items: center; border: 1px solid rgba(201,221,136,.34); border-radius: 12px; color: var(--lime); font: 700 .95rem Georgia, serif; letter-spacing: -.08em; }
+    .brand strong { display: block; font-size: .9rem; letter-spacing: .02em; }
+    .brand small { display: block; margin-top: 2px; color: #aabdb2; font-size: .65rem; letter-spacing: .03em; }
+    .workspace-label { padding: 22px 11px 9px; color: #91a79a; font-size: .64rem; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+    .workspace-select { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 10px; border: 1px solid rgba(255,255,255,.13); border-radius: 11px; background: rgba(255,255,255,.06); color: white; text-align: left; }
+    .workspace-avatar { display: grid; width: 30px; height: 30px; flex: none; place-items: center; border-radius: 9px; background: #dbe8c1; color: #294335; font-size: .7rem; font-weight: 800; }
+    .workspace-select strong { display: block; max-width: 130px; overflow: hidden; font-size: .75rem; text-overflow: ellipsis; white-space: nowrap; }
+    .workspace-select small { display: block; color: #aabdb2; font-size: .62rem; }
+    .chevron { margin-left: auto; color: #aabdb2; }
+    .nav-label { padding: 27px 11px 9px; color: #91a79a; font-size: .64rem; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+    .nav-list { display: grid; gap: 5px; }
+    .nav-item { display: flex; width: 100%; align-items: center; gap: 12px; padding: 11px 12px; border: 0; border-radius: 10px; background: transparent; color: #c1cec6; font-size: .82rem; font-weight: 600; text-align: left; transition: background .18s, color .18s; }
+    .nav-item:hover { background: rgba(255,255,255,.07); color: white; }
+    .nav-item.active { background: #244b40; color: white; }
+    .nav-item.active .nav-icon { color: var(--lime); }
+    .nav-icon { display: grid; width: 18px; place-items: center; color: #9eb2a6; }
+    .sidebar-spacer { flex: 1; }
+    .help-card { padding: 15px; border: 1px solid rgba(255,255,255,.12); border-radius: 14px; background: rgba(255,255,255,.055); }
+    .help-card strong { display: block; margin: 0 0 5px; color: white; font-size: .77rem; }
+    .help-card p { margin: 0 0 12px; color: #adbbb2; font-size: .68rem; line-height: 1.55; }
+    .help-card a { color: var(--lime); font-size: .72rem; font-weight: 700; }
+    .sidebar-foot { padding: 15px 10px 0; color: #80958a; font-size: .64rem; }
+
+    .main { min-height: 100vh; margin-left: 248px; }
+    .topbar { position: sticky; z-index: 4; top: 0; display: flex; min-height: 76px; align-items: center; justify-content: space-between; gap: 18px; padding: 0 38px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.91); backdrop-filter: blur(12px); }
+    .mobile-brand { display: none; }
+    .page-context { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: .76rem; }
+    .page-context strong { color: #344841; font-weight: 650; }
+    .context-dot { color: #bbc5be; }
+    .top-actions { display: flex; align-items: center; gap: 13px; }
+    .demo-badge { padding: 6px 9px; border: 1px solid #dbe6c8; border-radius: 99px; background: #f4f8eb; color: #556d3f; font-size: .63rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .current-date { color: #64716a; font-size: .75rem; }
+    .profile { display: flex; align-items: center; gap: 9px; padding-left: 14px; border-left: 1px solid var(--line); }
+    .profile-avatar { display: grid; width: 33px; height: 33px; place-items: center; border-radius: 50%; background: #e5eee6; color: #2f5c48; font-size: .71rem; font-weight: 800; }
+    .profile-text strong { display: block; font-size: .72rem; line-height: 1.2; }.profile-text small { color: var(--muted); font-size: .63rem; }
+    .mobile-menu { display: none; border: 0; background: transparent; color: var(--green); }
+    .content { width: min(1380px, 100%); margin: 0 auto; padding: 34px 38px 54px; }
+    .view-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 24px; }
+    .view-header h1 { margin: 0 0 5px; color: var(--ink); font: 500 clamp(1.65rem, 3vw, 2.05rem)/1.12 Georgia, "Times New Roman", serif; letter-spacing: -.04em; }
+    .view-header p { margin: 0; color: var(--muted); font-size: .79rem; }
+    .header-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+    .btn { display: inline-flex; min-height: 39px; align-items: center; justify-content: center; gap: 8px; padding: 0 14px; border: 1px solid transparent; border-radius: 9px; background: var(--green); color: white; font-size: .75rem; font-weight: 700; transition: background .18s, transform .18s; }
+    .btn:hover { background: #0f5a49; transform: translateY(-1px); }
+    .btn.secondary { border-color: var(--line); background: white; color: #40544b; }
+    .btn.secondary:hover { border-color: #bdcdc1; background: #f9fbf9; }
+    .btn.small { min-height: 30px; padding: 0 10px; font-size: .68rem; }
+    .icon-btn { display: inline-grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--line); border-radius: 9px; background: white; color: #52625b; }
+    .icon-btn:hover { background: #f6f9f6; }
+    .demo-notice { display: flex; align-items: center; gap: 10px; margin: 0 0 21px; padding: 11px 14px; border: 1px solid #e1e8d3; border-radius: 10px; background: #f7f9f0; color: #687653; font-size: .71rem; }
+    .demo-notice svg { flex: none; }
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+    .stat-card { position: relative; min-height: 135px; padding: 17px 18px; border: 1px solid var(--line); border-radius: 13px; background: white; box-shadow: 0 3px 10px rgba(20,40,31,.025); }
+    .stat-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .stat-label { color: #728078; font-size: .7rem; font-weight: 600; }
+    .stat-icon { display: grid; width: 31px; height: 31px; place-items: center; border-radius: 9px; background: var(--green-pale); color: #477360; }
+    .stat-value { margin: 11px 0 4px; color: #233b32; font-size: clamp(1.18rem, 2vw, 1.55rem); font-weight: 700; letter-spacing: -.04em; }
+    .stat-foot { color: #8a958e; font-size: .65rem; }
+    .stat-foot .positive { color: #2a7c5d; font-weight: 700; }
+    .stat-foot .negative { color: var(--red); font-weight: 700; }
+    .overview-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(265px, .85fr); gap: 16px; }
+    .panel { min-width: 0; border: 1px solid var(--line); border-radius: 13px; background: white; box-shadow: 0 3px 10px rgba(20,40,31,.025); }
+    .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 17px 19px; border-bottom: 1px solid #edf0ed; }
+    .panel-head h2 { margin: 0; color: #2c4038; font-size: .84rem; font-weight: 700; }
+    .panel-head p { margin: 3px 0 0; color: #8a958e; font-size: .65rem; }
+    .period-select { min-height: 30px; padding: 0 8px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: #58675f; font-size: .66rem; }
+    .chart-legend { display: flex; gap: 17px; color: #758179; font-size: .65rem; }
+    .legend-item { display: inline-flex; align-items: center; gap: 6px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green-2); }.legend-dot.expense { background: #d9b47a; }
+    .chart-area { padding: 16px 18px 13px; }
+    .chart-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; height: 205px; padding: 0 10px; border-bottom: 1px solid #edf0ed; background: repeating-linear-gradient(to bottom, transparent 0, transparent 49px, #eef1ed 50px); }
+    .month-bars { display: flex; align-items: end; justify-content: center; gap: 5px; height: 100%; }
+    .chart-bar { width: min(22px, 38%); min-height: 3px; border-radius: 5px 5px 0 0; background: var(--green-2); transition: height .25s; }
+    .chart-bar.expense { background: #d9b47a; }
+    .chart-months { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; padding: 8px 10px 1px; color: #8a958e; font-size: .62rem; text-align: center; }
+    .chart-caption { display: flex; justify-content: space-between; margin-top: 13px; color: #849087; font-size: .64rem; }
+    .quick-summary { display: grid; align-content: start; }
+    .summary-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 19px; border-bottom: 1px solid #edf0ed; }
+    .summary-row:last-child { border-bottom: 0; }
+    .summary-label { display: flex; align-items: center; gap: 9px; color: #68756e; font-size: .71rem; }
+    .summary-mark { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 8px; background: #f0f4ed; color: #51755e; }
+    .summary-row strong { font-size: .75rem; }
+    .summary-row small { display: block; color: #929b95; font-size: .6rem; text-align: right; }
+    .table-panel { margin-top: 17px; }
+    .table-tools { display: flex; align-items: center; gap: 8px; }
+    .table-wrap { width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+    th { padding: 11px 17px; background: #fafbfa; color: #869189; font-size: .61rem; font-weight: 750; letter-spacing: .06em; text-align: left; text-transform: uppercase; }
+    td { padding: 12px 17px; border-top: 1px solid #f0f2f0; color: #4e5e56; font-size: .71rem; }
+    td:first-child { color: #34483f; font-weight: 650; }
+    .amount { color: #30463c; font-weight: 700; text-align: right; }
+    th.amount { text-align: right; }
+    .transaction-name { display: flex; align-items: center; gap: 9px; }
+    .transaction-mark { display: grid; width: 29px; height: 29px; flex: none; place-items: center; border-radius: 8px; background: #eff4ed; color: #4e745e; }
+    .transaction-mark.expense { background: #fbf3e9; color: #a57a3e; }
+    .transaction-name strong { display: block; color: #34483f; font-size: .69rem; }
+    .transaction-name small { display: block; margin-top: 2px; color: #959e98; font-size: .61rem; }
+    .status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 999px; background: #edf6f0; color: #397653; font-size: .61rem; font-weight: 700; }
+    .status::before { width: 5px; height: 5px; border-radius: 50%; background: currentColor; content: ""; }
+    .status.pending { background: #fbf5e9; color: #9b783e; }
+    .status.overdue { background: var(--red-pale); color: var(--red); }
+    .status.expense { background: #f3f0e9; color: #8e754f; }
+    .table-foot { display: flex; justify-content: space-between; gap: 12px; padding: 12px 18px; border-top: 1px solid #edf0ed; color: #89948d; font-size: .64rem; }
+    .table-foot a { color: #2d7057; font-weight: 700; }
+    .empty-state { padding: 34px 18px; color: #8a958e; font-size: .76rem; text-align: center; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
+    .search { position: relative; }
+    .search svg { position: absolute; top: 10px; left: 10px; color: #8c9790; pointer-events: none; }
+    .search input { width: min(245px, 70vw); min-height: 36px; padding: 0 10px 0 33px; border: 1px solid var(--line); border-radius: 8px; outline: none; background: white; color: var(--ink); font-size: .71rem; }
+    .search input:focus { border-color: #96b29f; box-shadow: 0 0 0 3px rgba(67,124,91,.09); }
+    .filter-select { min-height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: white; color: #65726b; font-size: .7rem; }
+    .table-page { margin-top: 2px; }
+    .invoice-note { margin: 0; color: #88938c; font-size: .68rem; }
+    .reports-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 16px; }
+    .report-card { padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: white; }
+    .report-card small { color: #7b8981; font-size: .67rem; }.report-card strong { display: block; margin: 9px 0 4px; color: #2f493c; font-size: 1.2rem; letter-spacing: -.03em; }.report-card span { color: #98a29b; font-size: .63rem; }
+    .report-list { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 15px 18px; border-bottom: 1px solid #f0f2f0; }
+    .report-list:last-child { border-bottom: 0; }
+    .report-list strong { display: block; color: #41544b; font-size: .73rem; }.report-list small { color: #89958e; font-size: .64rem; }
+    .settings-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, .7fr); gap: 15px; }
+    .setting-block { padding: 18px; border-bottom: 1px solid #eef1ee; }.setting-block:last-child { border-bottom: 0; }
+    .setting-block h3 { margin: 0 0 5px; font-size: .77rem; }.setting-block p { margin: 0; color: #849088; font-size: .69rem; }
+    .setting-side { padding: 19px; border: 1px solid #efe3d5; border-radius: 12px; background: #fcf8f2; }
+    .setting-side h3 { margin: 0 0 8px; color: #6d5132; font-size: .8rem; }.setting-side p { color: #8b795f; font-size: .69rem; }
+    .danger-btn { min-height: 34px; padding: 0 11px; border: 1px solid #e8c9c5; border-radius: 8px; background: white; color: #a54c43; font-size: .68rem; font-weight: 700; }
+    .danger-btn:hover { background: #fff8f7; }
+    .overlay { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(12,30,26,.48); backdrop-filter: blur(3px); }
+    .modal { width: min(485px, 100%); max-height: min(90vh, 760px); overflow-y: auto; border: 1px solid rgba(255,255,255,.6); border-radius: 17px; background: white; box-shadow: 0 24px 80px rgba(0,0,0,.22); }
+    .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; padding: 21px 22px 17px; border-bottom: 1px solid #edf0ed; }
+    .modal-head h2 { margin: 0 0 3px; font: 500 1.45rem/1.15 Georgia, serif; letter-spacing: -.03em; }
+    .modal-head p { margin: 0; color: #829087; font-size: .68rem; }
+    .close-modal { display: grid; width: 31px; height: 31px; place-items: center; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: #66756d; }
+    .modal-form { display: grid; gap: 14px; padding: 20px 22px 22px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { display: grid; gap: 6px; }
+    .field label { color: #58675f; font-size: .67rem; font-weight: 700; }
+    .field input, .field select, .field textarea { width: 100%; min-height: 39px; padding: 9px 10px; border: 1px solid #dfe6e0; border-radius: 8px; outline: none; background: white; color: #33473d; font-size: .73rem; }
+    .field textarea { min-height: 67px; resize: vertical; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: #89aa93; box-shadow: 0 0 0 3px rgba(69,125,91,.1); }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 4px; padding-top: 14px; border-top: 1px solid #edf0ed; }
+    .toast { position: fixed; z-index: 30; right: 22px; bottom: 22px; max-width: min(380px, calc(100% - 44px)); padding: 12px 16px; border: 1px solid #d3e4d4; border-radius: 10px; background: #f6fbf6; box-shadow: var(--shadow); color: #35604a; font-size: .74rem; animation: arrive .2s ease-out; }
+    @keyframes arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 1120px) {
+      .sidebar { width: 220px; }.main { margin-left: 220px; }.content { padding-inline: 26px; }.topbar { padding-inline: 26px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }.overview-grid { grid-template-columns: minmax(0, 1.4fr) minmax(240px, .8fr); }
+    }
+    @media (max-width: 850px) {
+      .sidebar { width: 72px; align-items: center; padding-inline: 9px; }.brand { padding: 0 0 22px; border: 0; }.brand-mark { width: 42px; height: 42px; }.brand-copy, .workspace-label, .workspace-select strong, .workspace-select small, .chevron, .nav-label, .nav-item .nav-text, .help-card, .sidebar-foot { display: none; }
+      .workspace-select { justify-content: center; padding: 7px; border: 0; background: transparent; }.workspace-avatar { width: 36px; height: 36px; }
+      .nav-list { width: 100%; margin-top: 15px; }.nav-item { justify-content: center; padding: 12px 0; }.nav-icon { width: auto; }.sidebar-spacer { flex: 1; }
+      .main { margin-left: 72px; }.topbar { min-height: 66px; }.page-context { display: none; }.mobile-brand { display: flex; align-items: center; gap: 8px; }.mobile-brand .brand-mark { width: 33px; height: 33px; border-radius: 9px; font-size: .8rem; }.mobile-brand strong { font-size: .8rem; }
+      .overview-grid { grid-template-columns: 1fr; }.quick-summary { grid-template-columns: 1fr 1fr; }.summary-row:nth-child(odd) { border-right: 1px solid #edf0ed; }.summary-row:nth-last-child(-n+2) { border-bottom: 0; }
+      .settings-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 580px) {
+      .sidebar { position: fixed; inset: auto 0 0; width: 100%; height: 62px; flex-direction: row; justify-content: space-around; padding: 5px 10px max(5px, env(safe-area-inset-bottom)); border-top: 1px solid rgba(255,255,255,.12); }
+      .brand, .workspace-select, .sidebar-spacer { display: none; }.nav-list { display: flex; justify-content: space-around; gap: 2px; margin: 0; }.nav-item { width: 52px; height: 48px; padding: 0; }.nav-item.active { background: #244b40; }.nav-icon svg { width: 19px; height: 19px; }
+      .main { margin-left: 0; padding-bottom: 63px; }.topbar { min-height: 61px; padding-inline: 15px; }.top-actions { gap: 8px; }.profile-text, .current-date { display: none; }.profile { padding-left: 9px; }.profile-avatar { width: 31px; height: 31px; }.demo-badge { padding: 5px 7px; font-size: .56rem; }
+      .content { padding: 24px 15px 30px; }.view-header { align-items: flex-start; flex-direction: column; margin-bottom: 19px; }.view-header h1 { font-size: 1.8rem; }.header-actions { width: 100%; }.header-actions .btn { flex: 1; }
+      .stats { gap: 9px; }.stat-card { min-height: 122px; padding: 13px; }.stat-value { margin-top: 13px; font-size: 1.1rem; }.stat-label { max-width: 105px; font-size: .63rem; }.stat-icon { width: 27px; height: 27px; }.stat-foot { font-size: .58rem; }
+      .panel-head { align-items: flex-start; flex-wrap: wrap; padding: 14px; }.chart-legend { gap: 10px; }.chart-area { padding-inline: 12px; }.chart-grid { height: 166px; gap: 5px; padding-inline: 3px; }.chart-months { gap: 5px; padding-inline: 3px; font-size: .56rem; }.chart-bar { width: 32%; }.quick-summary { grid-template-columns: 1fr; }.summary-row:nth-child(odd) { border-right: 0; }.summary-row:nth-last-child(-n+2) { border-bottom: 1px solid #edf0ed; }.summary-row:last-child { border-bottom: 0; }
+      .table-tools { width: 100%; }.table-tools .btn { margin-left: auto; }.search { flex: 1; }.search input { width: 100%; }.table-panel .panel-head { align-items: flex-start; }
+      .reports-grid { grid-template-columns: 1fr; gap: 9px; }.report-card { padding: 14px; }.form-grid { grid-template-columns: 1fr; }.modal-form { padding-inline: 17px; }.modal-head { padding-inline: 17px; }
+      .toast { right: 12px; bottom: 75px; max-width: calc(100% - 24px); }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Application sidebar">
+      <a class="brand" href="#overview" aria-label="EMF Books home"><span class="brand-mark">EMF</span><span class="brand-copy"><strong>EMF Books</strong><small>Accounting workspace</small></span></a>
+      <div class="workspace-label">Workspace</div>
+      <button class="workspace-select" type="button" aria-label="Current demo workspace">
+        <span class="workspace-avatar">DT</span><span><strong id="workspace-name">Demo Trading Ltd.</strong><small>Client workspace</small></span><span class="chevron" aria-hidden="true">⌄</span>
+      </button>
+      <div class="nav-label">Workspace menu</div>
+      <nav class="nav-list" aria-label="Main navigation" id="main-nav">
+        <button class="nav-item active" type="button" data-view="overview"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="5.5" height="5.5" rx="1"/><rect x="11.5" y="3" width="5.5" height="5.5" rx="1"/><rect x="3" y="11.5" width="5.5" height="5.5" rx="1"/><rect x="11.5" y="11.5" width="5.5" height="5.5" rx="1"/></svg></span><span class="nav-text">Overview</span></button>
+        <button class="nav-item" type="button" data-view="transactions"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 4h12M4 8h12M4 12h7M4 16h5" stroke-linecap="round"/><circle cx="15" cy="14.5" r="2.5"/></svg></span><span class="nav-text">Transactions</span></button>
+        <button class="nav-item" type="button" data-view="invoices"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M5 2.8h7l3 3v11.4H5z" stroke-linejoin="round"/><path d="M12 2.8v3.5h3M7.5 10h5M7.5 13h5" stroke-linecap="round"/></svg></span><span class="nav-text">Invoices</span></button>
+        <button class="nav-item" type="button" data-view="reports"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M3 16.5V9m4.5 7.5V4m4.5 12.5v-5m4.5 5V6" stroke-linecap="round"/><path d="M2.5 17h15" stroke-linecap="round"/></svg></span><span class="nav-text">Reports</span></button>
+        <button class="nav-item" type="button" data-view="settings"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="m16.1 11.8 1.1.9-1.6 2.8-1.4-.5a6 6 0 0 1-1.5.9l-.3 1.5H7.6l-.3-1.5a6 6 0 0 1-1.5-.9l-1.4.5-1.6-2.8 1.1-.9a6.6 6.6 0 0 1 0-1.7l-1.1-.9 1.6-2.8 1.4.5a6 6 0 0 1 1.5-.9l.3-1.5h4.8l.3 1.5a6 6 0 0 1 1.5.9l1.4-.5 1.6 2.8-1.1.9a6.6 6.6 0 0 1 0 1.7Z" stroke-linejoin="round"/></svg></span><span class="nav-text">Settings</span></button>
+      </nav>
+      <div class="sidebar-spacer"></div>
+      <div class="help-card"><strong>Need a hand with your books?</strong><p>Speak with your EMF engagement contact about reporting and financial control.</p></div>
+      <div class="sidebar-foot">EMF Accounting &amp; Business Advisory</div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="mobile-brand"><span class="brand-mark">EMF</span><strong>EMF Books</strong></div>
+        <div class="page-context"><span>Workspace</span><span class="context-dot">/</span><strong id="crumb-label">Overview</strong></div>
+        <div class="top-actions"><span class="demo-badge">Demo data</span><span class="current-date" id="today-label"></span><div class="profile"><span class="profile-avatar">EM</span><span class="profile-text"><strong>EMF Admin</strong><small>Accountant</small></span></div></div>
+      </header>
+
+      <main class="content">
+        <section class="view" id="view-overview">
+          <div class="view-header"><div><h1>Good morning</h1><p>Here’s a clear view of your business finances.</p></div><div class="header-actions"><button class="btn secondary" type="button" data-action="new-invoice"><span aria-hidden="true">＋</span> Create invoice</button><button class="btn" type="button" data-action="new-transaction"><span aria-hidden="true">＋</span> Add transaction</button></div></div>
+          <div class="demo-notice"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.4"/><path d="M10 9v4m0-6h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>This workspace uses sample figures to demonstrate the app. Add your own records to explore the workflow.</div>
+          <div class="stats" id="stats-grid"></div>
+          <div class="overview-grid">
+            <section class="panel">
+              <div class="panel-head"><div><h2>Income &amp; expenses</h2><p>Monthly activity for the last six months</p></div><div class="chart-legend"><span class="legend-item"><i class="legend-dot"></i>Income</span><span class="legend-item"><i class="legend-dot expense"></i>Expenses</span></div></div>
+              <div class="chart-area"><div class="chart-grid" id="chart-grid" aria-label="Income and expense chart"></div><div class="chart-months" id="chart-months"></div><div class="chart-caption"><span>Amounts shown in Nigerian naira</span><span id="chart-total"></span></div></div>
+            </section>
+            <section class="panel quick-summary"><div class="panel-head"><div><h2>Money to follow up</h2><p>Open customer and supplier balances</p></div></div><div id="money-summary"></div></section>
+          </div>
+          <section class="panel table-panel">
+            <div class="panel-head"><div><h2>Recent transactions</h2><p>Your latest recorded activity</p></div><a class="btn secondary small" href="#transactions" data-goto="transactions">View all</a></div>
+            <div class="table-wrap"><table><thead><tr><th>Transaction</th><th>Date</th><th>Account</th><th>Status</th><th class="amount">Amount</th></tr></thead><tbody id="recent-transactions"></tbody></table></div>
+            <div class="table-foot"><span id="recent-count"></span><a href="#transactions" data-goto="transactions">All transactions →</a></div>
+          </section>
+        </section>
+
+        <section class="view" id="view-transactions" hidden>
+          <div class="view-header"><div><h1>Transactions</h1><p>Record and review business income and expenses.</p></div><div class="header-actions"><button class="btn secondary" type="button" data-action="export-csv">↓ Export CSV</button><button class="btn" type="button" data-action="new-transaction"><span aria-hidden="true">＋</span> Add transaction</button></div></div>
+          <div class="stats" id="transaction-stats"></div>
+          <section class="panel table-page"><div class="panel-head"><div><h2>All transactions</h2><p id="transaction-table-subtitle">Recorded activity in this workspace</p></div><div class="toolbar"><label class="search"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8.8" cy="8.8" r="5.8" stroke="currentColor" stroke-width="1.5"/><path d="m13.2 13.2 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><input id="transaction-search" type="search" placeholder="Search transactions" aria-label="Search transactions"></label><select class="filter-select" id="transaction-filter" aria-label="Filter transaction type"><option value="all">All types</option><option value="income">Income</option><option value="expense">Expenses</option></select></div></div><div class="table-wrap"><table><thead><tr><th>Transaction</th><th>Date</th><th>Category</th><th>Account</th><th>Status</th><th class="amount">Amount</th></tr></thead><tbody id="all-transactions"></tbody></table></div><div class="table-foot"><span id="transaction-count"></span><span>Amounts in NGN</span></div></section>
+        </section>
+
+        <section class="view" id="view-invoices" hidden>
+          <div class="view-header"><div><h1>Invoices</h1><p>Keep track of customer invoices and payments.</p></div><div class="header-actions"><button class="btn" type="button" data-action="new-invoice"><span aria-hidden="true">＋</span> Create invoice</button></div></div>
+          <div class="stats" id="invoice-stats"></div>
+          <section class="panel table-page"><div class="panel-head"><div><h2>Customer invoices</h2><p>Mark an invoice paid when the payment is received.</p></div><label class="search"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="8.8" cy="8.8" r="5.8" stroke="currentColor" stroke-width="1.5"/><path d="m13.2 13.2 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><input id="invoice-search" type="search" placeholder="Search invoices" aria-label="Search invoices"></label></div><div class="table-wrap"><table><thead><tr><th>Invoice</th><th>Customer</th><th>Issue date</th><th>Due date</th><th>Status</th><th class="amount">Amount</th><th></th></tr></thead><tbody id="invoice-rows"></tbody></table></div><div class="table-foot"><span id="invoice-count"></span><span class="invoice-note">Marking an invoice paid adds an income transaction.</span></div></section>
+        </section>
+
+        <section class="view" id="view-reports" hidden>
+          <div class="view-header"><div><h1>Reports</h1><p>Simple management summaries based on recorded transactions.</p></div><div class="header-actions"><button class="btn secondary" type="button" data-action="export-csv">↓ Export transactions</button></div></div>
+          <div class="demo-notice"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.4"/><path d="M10 9v4m0-6h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>These summaries use transaction records only. This prototype does not prepare statutory financial statements.</div>
+          <div class="reports-grid" id="report-cards"></div>
+          <section class="panel"><div class="panel-head"><div><h2>Monthly performance</h2><p>Income less expenses by month</p></div></div><div id="monthly-report"></div></section>
+        </section>
+
+        <section class="view" id="view-settings" hidden>
+          <div class="view-header"><div><h1>Settings</h1><p>Workspace details and local demo data.</p></div></div>
+          <div class="settings-grid"><section class="panel"><div class="panel-head"><div><h2>Workspace details</h2><p>Current demo configuration</p></div></div><div class="setting-block"><h3>Business workspace</h3><p>Demo Trading Ltd. · SME client workspace</p></div><div class="setting-block"><h3>Display currency</h3><p>Nigerian naira (₦) · NGN</p></div><div class="setting-block"><h3>Data storage</h3><p>Demo entries are saved in this browser only using local storage.</p></div></section><aside class="setting-side"><h3>Reset this demo</h3><p>Remove the entries you added and restore the sample workspace on this browser.</p><button class="danger-btn" type="button" data-action="reset-demo">Restore sample data</button></aside></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="overlay" id="modal-overlay" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head"><div><h2 id="modal-title">Add transaction</h2><p id="modal-description">Record a business payment or receipt.</p></div><button class="close-modal" type="button" aria-label="Close dialog" data-close-modal>×</button></div>
+      <form class="modal-form" id="transaction-form" hidden>
+        <div class="form-grid"><div class="field"><label for="tx-date">Date</label><input id="tx-date" name="date" type="date" required></div><div class="field"><label for="tx-type">Type</label><select id="tx-type" name="type"><option value="income">Income</option><option value="expense">Expense</option></select></div></div>
+        <div class="field"><label for="tx-description">Description</label><input id="tx-description" name="description" required maxlength="90" placeholder="e.g. Customer payment"></div>
+        <div class="form-grid"><div class="field"><label for="tx-category">Category</label><select id="tx-category" name="category"><option>Sales</option><option>Service revenue</option><option>Other income</option><option>Inventory</option><option>Payroll</option><option>Rent</option><option>Utilities</option><option>Transport</option><option>Office expenses</option><option>Other expense</option></select></div><div class="field"><label for="tx-account">Account</label><select id="tx-account" name="account"><option>Business bank</option><option>Cash</option><option>POS clearing</option></select></div></div>
+        <div class="field"><label for="tx-amount">Amount (₦)</label><input id="tx-amount" name="amount" type="number" min="1" step="0.01" required placeholder="0.00"></div>
+        <div class="modal-actions"><button class="btn secondary" type="button" data-close-modal>Cancel</button><button class="btn" type="submit">Save transaction</button></div>
+      </form>
+      <form class="modal-form" id="invoice-form" hidden>
+        <div class="form-grid"><div class="field"><label for="inv-customer">Customer</label><input id="inv-customer" name="customer" required maxlength="70" placeholder="Customer or business name"></div><div class="field"><label for="inv-amount">Amount (₦)</label><input id="inv-amount" name="amount" type="number" min="1" step="0.01" required placeholder="0.00"></div></div>
+        <div class="form-grid"><div class="field"><label for="inv-date">Issue date</label><input id="inv-date" name="date" type="date" required></div><div class="field"><label for="inv-due">Due date</label><input id="inv-due" name="due" type="date" required></div></div>
+        <div class="field"><label for="inv-description">Description</label><input id="inv-description" name="description" required maxlength="90" placeholder="e.g. Monthly accounting services"></div>
+        <div class="modal-actions"><button class="btn secondary" type="button" data-close-modal>Cancel</button><button class="btn" type="submit">Save invoice</button></div>
+      </form>
+    </section>
+  </div>
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <script>
+    // Demo app configuration. Change the workspace name here when adapting this prototype.
+    const WORKSPACE_NAME = "Demo Trading Ltd.";
+    const STORAGE_KEY = "emf-books-demo-v1";
+    const OPENING_BALANCE = 12500000;
+    const money = new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 });
+    const shortMoney = new Intl.NumberFormat("en-NG", { maximumFractionDigits: 0 });
+
+    function dateAtMonthOffset(offset, day = 12) {
+      const date = new Date();
+      date.setDate(1);
+      date.setMonth(date.getMonth() + offset);
+      const end = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+      date.setDate(Math.min(day, end));
+      return localDateString(date);
+    }
+    function localDateString(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+    function dateOffset(days) {
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      return localDateString(date);
+    }
+    function makeDemoData() {
+      const transactions = [
+        { id: "TX-101", description: "Retail sales settlement", date: dateAtMonthOffset(0, 9), type: "income", category: "Sales", account: "POS clearing", amount: 1860000, status: "Recorded" },
+        { id: "TX-102", description: "Supplier stock payment", date: dateAtMonthOffset(0, 8), type: "expense", category: "Inventory", account: "Business bank", amount: 780000, status: "Recorded" },
+        { id: "TX-103", description: "Wholesale customer payment", date: dateAtMonthOffset(0, 7), type: "income", category: "Sales", account: "Business bank", amount: 2450000, status: "Recorded" },
+        { id: "TX-104", description: "Staff payroll", date: dateAtMonthOffset(0, 5), type: "expense", category: "Payroll", account: "Business bank", amount: 640000, status: "Recorded" },
+        { id: "TX-105", description: "Monthly premises rent", date: dateAtMonthOffset(0, 3), type: "expense", category: "Rent", account: "Business bank", amount: 320000, status: "Recorded" },
+        { id: "TX-106", description: "Online store sales", date: dateAtMonthOffset(-1, 26), type: "income", category: "Sales", account: "POS clearing", amount: 1380000, status: "Recorded" },
+        { id: "TX-107", description: "Electricity and internet", date: dateAtMonthOffset(-1, 22), type: "expense", category: "Utilities", account: "Business bank", amount: 118000, status: "Recorded" },
+        { id: "TX-108", description: "Service income", date: dateAtMonthOffset(-1, 17), type: "income", category: "Service revenue", account: "Business bank", amount: 930000, status: "Recorded" },
+        { id: "TX-109", description: "Delivery and logistics", date: dateAtMonthOffset(-2, 24), type: "expense", category: "Transport", account: "Cash", amount: 96500, status: "Recorded" },
+        { id: "TX-110", description: "Customer invoice payment", date: dateAtMonthOffset(-2, 18), type: "income", category: "Sales", account: "Business bank", amount: 1975000, status: "Recorded" },
+        { id: "TX-111", description: "Office supplies", date: dateAtMonthOffset(-3, 14), type: "expense", category: "Office expenses", account: "Cash", amount: 84500, status: "Recorded" },
+        { id: "TX-112", description: "Wholesale order", date: dateAtMonthOffset(-3, 10), type: "income", category: "Sales", account: "Business bank", amount: 2100000, status: "Recorded" },
+        { id: "TX-113", description: "Inventory restock", date: dateAtMonthOffset(-4, 20), type: "expense", category: "Inventory", account: "Business bank", amount: 690000, status: "Recorded" },
+        { id: "TX-114", description: "Retail sales settlement", date: dateAtMonthOffset(-4, 16), type: "income", category: "Sales", account: "POS clearing", amount: 1690000, status: "Recorded" },
+        { id: "TX-115", description: "Professional service fee", date: dateAtMonthOffset(-5, 22), type: "expense", category: "Other expense", account: "Business bank", amount: 132000, status: "Recorded" },
+        { id: "TX-116", description: "Customer payment", date: dateAtMonthOffset(-5, 8), type: "income", category: "Sales", account: "Business bank", amount: 1580000, status: "Recorded" }
+      ];
+      const invoices = [
+        { id: "EMF-2041", customer: "Harbour Retail Co.", description: "Monthly accounting support", date: dateOffset(-8), due: dateOffset(7), amount: 125000, status: "pending" },
+        { id: "EMF-2040", customer: "Greenfield Pharmacy", description: "Bookkeeping and reconciliation", date: dateOffset(-19), due: dateOffset(-4), amount: 175000, status: "pending" },
+        { id: "EMF-2039", customer: "Northpoint Foods", description: "Management reporting", date: dateAtMonthOffset(-1, 10), due: dateAtMonthOffset(-1, 25), amount: 225000, status: "paid" },
+        { id: "EMF-2038", customer: "Harbour Retail Co.", description: "Accounting setup and cleanup", date: dateAtMonthOffset(-1, 3), due: dateAtMonthOffset(-1, 18), amount: 95000, status: "paid" },
+        { id: "EMF-2037", customer: "Oakline Distribution", description: "Monthly accounting support", date: dateAtMonthOffset(-2, 13), due: dateAtMonthOffset(-2, 28), amount: 150000, status: "paid" }
+      ];
+      return { transactions, invoices, nextTransaction: 117, nextInvoice: 2042 };
+    }
+    let memoryStorage = null;
+    function readStoredData() {
+      try { return localStorage.getItem(STORAGE_KEY); }
+      catch (error) { return memoryStorage; }
+    }
+    function persistData(value) {
+      memoryStorage = value;
+      try { localStorage.setItem(STORAGE_KEY, value); }
+      catch (error) { /* Keep the current session usable when browser storage is unavailable. */ }
+    }
+    function loadData() {
+      try {
+        const saved = readStoredData();
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed.transactions) && Array.isArray(parsed.invoices)) return parsed;
+        }
+      } catch (error) { /* Invalid saved demo data is replaced with a fresh sample. */ }
+      const demo = makeDemoData();
+      persistData(JSON.stringify(demo));
+      return demo;
+    }
+    let data = loadData();
+    let toastTimer;
+
+    function saveData() { persistData(JSON.stringify(data)); }
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character]);
+    }
+    function formatMoney(amount) { return money.format(Number(amount) || 0); }
+    function formatAmount(amount) { return shortMoney.format(Number(amount) || 0); }
+    function formatDate(value) {
+      if (!value) return "—";
+      const [year, month, day] = value.split("-").map(Number);
+      return new Intl.DateTimeFormat("en-NG", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(year, month - 1, day));
+    }
+    function monthKey(value) { return value.slice(0, 7); }
+    function monthLabel(date) { return new Intl.DateTimeFormat("en-NG", { month: "short" }).format(date); }
+    function sumType(type, rows = data.transactions) { return rows.reduce((total, item) => total + (item.type === type ? Number(item.amount) : 0), 0); }
+    function currentCash() { return OPENING_BALANCE + sumType("income") - sumType("expense"); }
+    function unpaidInvoices() { return data.invoices.filter(invoice => invoice.status !== "paid"); }
+    function invoiceStatus(invoice) {
+      if (invoice.status === "paid") return "paid";
+      if (invoice.due < dateOffset(0)) return "overdue";
+      return "pending";
+    }
+    function statusLabel(status) { return status.charAt(0).toUpperCase() + status.slice(1); }
+    function sortRecent(rows) { return [...rows].sort((a, b) => b.date.localeCompare(a.date)); }
+    function iconSvg(name) {
+      const icons = {
+        income: '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 14.5 8 10l2.8 2.7L16.5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.5 6h4v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        expense: '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 5.5 8 10l2.8-2.7 5.7 6.7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.5 14h4v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        cash: '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2.8" y="5" width="14.4" height="10.5" rx="2" stroke="currentColor" stroke-width="1.4"/><circle cx="10" cy="10.2" r="2" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 8v.01M14.5 12.5v.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+        invoice: '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 2.8h7l3 3v11.4H5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 2.8v3.5h3M7.5 10h5M7.5 13h5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>'
+      };
+      return icons[name] || icons.cash;
+    }
+    function statCard(label, amount, foot, icon, footClass = "") {
+      return `<article class="stat-card"><div class="stat-top"><span class="stat-label">${label}</span><span class="stat-icon">${iconSvg(icon)}</span></div><div class="stat-value">${formatMoney(amount)}</div><div class="stat-foot ${footClass}">${foot}</div></article>`;
+    }
+    function renderStats(targetId, mode = "overview") {
+      const income = sumType("income");
+      const expenses = sumType("expense");
+      const net = income - expenses;
+      let html;
+      if (mode === "overview") {
+        html = statCard("Total income", income, "All recorded activity", "income") +
+          statCard("Total expenses", expenses, "All recorded activity", "expense") +
+          statCard("Net activity", net, "Income less recorded expenses", net >= 0 ? "income" : "expense", net >= 0 ? "positive" : "negative") +
+          statCard("Estimated cash position", currentCash(), "Opening balance + recorded activity", "cash");
+      } else if (mode === "transactions") {
+        html = statCard("Income", income, `${data.transactions.length} recorded transactions`, "income") +
+          statCard("Expenses", expenses, "Recorded expenses", "expense") +
+          statCard("Net activity", net, "Income less expenses", net >= 0 ? "income" : "expense", net >= 0 ? "positive" : "negative") +
+          statCard("Transaction count", data.transactions.length, "Saved in this browser", "cash");
+      } else {
+        const open = unpaidInvoices();
+        const dueTotal = open.reduce((total, invoice) => total + Number(invoice.amount), 0);
+        const overdue = open.filter(invoice => invoiceStatus(invoice) === "overdue");
+        const paid = data.invoices.filter(invoice => invoice.status === "paid").reduce((total, invoice) => total + Number(invoice.amount), 0);
+        html = statCard("Outstanding", dueTotal, `${open.length} invoice${open.length === 1 ? "" : "s"} awaiting payment`, "invoice") +
+          statCard("Overdue", overdue.reduce((total, invoice) => total + Number(invoice.amount), 0), `${overdue.length} overdue invoice${overdue.length === 1 ? "" : "s"}`, "expense", overdue.length ? "negative" : "") +
+          statCard("Paid invoices", paid, `${data.invoices.filter(invoice => invoice.status === "paid").length} marked paid`, "income") +
+          statCard("Invoice count", data.invoices.length, "In this workspace", "cash");
+      }
+      document.getElementById(targetId).innerHTML = html;
+    }
+    function recentTransactionRow(item) {
+      const isIncome = item.type === "income";
+      return `<tr><td><div class="transaction-name"><span class="transaction-mark ${isIncome ? "" : "expense"}">${iconSvg(isIncome ? "income" : "expense")}</span><span><strong>${escapeHtml(item.description)}</strong><small>${escapeHtml(item.category)}</small></span></div></td><td>${formatDate(item.date)}</td><td>${escapeHtml(item.account)}</td><td><span class="status ${isIncome ? "" : "expense"}">${escapeHtml(item.status || "Recorded")}</span></td><td class="amount">${isIncome ? "+" : "−"}${formatMoney(item.amount)}</td></tr>`;
+    }
+    function renderRecent() {
+      const rows = sortRecent(data.transactions).slice(0, 6);
+      document.getElementById("recent-transactions").innerHTML = rows.length ? rows.map(recentTransactionRow).join("") : '<tr><td colspan="5"><div class="empty-state">No transactions yet. Add your first transaction to get started.</div></td></tr>';
+      document.getElementById("recent-count").textContent = `${data.transactions.length} transaction${data.transactions.length === 1 ? "" : "s"} in this workspace`;
+    }
+    function getMonthlyActivity() {
+      const months = [];
+      const now = new Date();
+      now.setDate(1);
+      for (let offset = -5; offset <= 0; offset++) {
+        const date = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+        const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        const rows = data.transactions.filter(row => monthKey(row.date) === key);
+        months.push({ key, label: monthLabel(date), income: sumType("income", rows), expenses: sumType("expense", rows) });
+      }
+      return months;
+    }
+    function renderChart() {
+      const months = getMonthlyActivity();
+      const maximum = Math.max(1, ...months.flatMap(month => [month.income, month.expenses]));
+      document.getElementById("chart-grid").innerHTML = months.map(month => {
+        const incomeHeight = month.income ? Math.max(5, month.income / maximum * 100) : 2;
+        const expenseHeight = month.expenses ? Math.max(5, month.expenses / maximum * 100) : 2;
+        return `<div class="month-bars" title="${month.label}: income ${formatMoney(month.income)}, expenses ${formatMoney(month.expenses)}"><i class="chart-bar" style="height:${incomeHeight}%"></i><i class="chart-bar expense" style="height:${expenseHeight}%"></i></div>`;
+      }).join("");
+      document.getElementById("chart-months").innerHTML = months.map(month => `<span>${month.label}</span>`).join("");
+      const shownIncome = months.reduce((sum, month) => sum + month.income, 0);
+      const shownExpenses = months.reduce((sum, month) => sum + month.expenses, 0);
+      document.getElementById("chart-total").textContent = `Net ${formatMoney(shownIncome - shownExpenses)}`;
+    }
+    function renderMoneySummary() {
+      const open = unpaidInvoices();
+      const receivables = open.reduce((total, invoice) => total + Number(invoice.amount), 0);
+      const overdue = open.filter(invoice => invoiceStatus(invoice) === "overdue");
+      const overdueTotal = overdue.reduce((total, invoice) => total + Number(invoice.amount), 0);
+      const html = [
+        ["Open customer invoices", receivables, `${open.length} awaiting payment`, "invoice"],
+        ["Past due", overdueTotal, `${overdue.length} overdue`, "expense"],
+        ["Estimated cash position", currentCash(), "Opening balance + activity", "cash"],
+        ["Unpaid supplier bills", 0, "Supplier bill tracking not configured", "expense"]
+      ].map(([label, amount, note, icon]) => `<div class="summary-row"><span class="summary-label"><span class="summary-mark">${iconSvg(icon)}</span>${label}</span><span><strong>${formatMoney(amount)}</strong><small>${note}</small></span></div>`).join("");
+      document.getElementById("money-summary").innerHTML = html;
+    }
+    function renderTransactions() {
+      const query = (document.getElementById("transaction-search")?.value || "").trim().toLowerCase();
+      const filter = document.getElementById("transaction-filter")?.value || "all";
+      const rows = sortRecent(data.transactions).filter(item => {
+        const matchQuery = [item.description, item.category, item.account, item.id].some(value => String(value).toLowerCase().includes(query));
+        return matchQuery && (filter === "all" || item.type === filter);
+      });
+      document.getElementById("all-transactions").innerHTML = rows.length ? rows.map(item => {
+        const isIncome = item.type === "income";
+        return `<tr><td><div class="transaction-name"><span class="transaction-mark ${isIncome ? "" : "expense"}">${iconSvg(isIncome ? "income" : "expense")}</span><span><strong>${escapeHtml(item.description)}</strong><small>${escapeHtml(item.id)}</small></span></div></td><td>${formatDate(item.date)}</td><td>${escapeHtml(item.category)}</td><td>${escapeHtml(item.account)}</td><td><span class="status ${isIncome ? "" : "expense"}">${escapeHtml(item.status || "Recorded")}</span></td><td class="amount">${isIncome ? "+" : "−"}${formatMoney(item.amount)}</td></tr>`;
+      }).join("") : '<tr><td colspan="6"><div class="empty-state">No transactions match your search.</div></td></tr>';
+      document.getElementById("transaction-count").textContent = `${rows.length} of ${data.transactions.length} transactions`;
+    }
+    function renderInvoices() {
+      const query = (document.getElementById("invoice-search")?.value || "").trim().toLowerCase();
+      const rows = [...data.invoices].sort((a, b) => b.date.localeCompare(a.date)).filter(invoice => [invoice.id, invoice.customer, invoice.description].some(value => String(value).toLowerCase().includes(query)));
+      document.getElementById("invoice-rows").innerHTML = rows.length ? rows.map(invoice => {
+        const status = invoiceStatus(invoice);
+        return `<tr><td><strong>${escapeHtml(invoice.id)}</strong><br><small style="color:#939e97">${escapeHtml(invoice.description)}</small></td><td>${escapeHtml(invoice.customer)}</td><td>${formatDate(invoice.date)}</td><td>${formatDate(invoice.due)}</td><td><span class="status ${status}">${statusLabel(status)}</span></td><td class="amount">${formatMoney(invoice.amount)}</td><td>${status !== "paid" ? `<button class="btn secondary small" type="button" data-mark-paid="${escapeHtml(invoice.id)}">Mark paid</button>` : ""}</td></tr>`;
+      }).join("") : '<tr><td colspan="7"><div class="empty-state">No invoices match your search.</div></td></tr>';
+      document.getElementById("invoice-count").textContent = `${rows.length} of ${data.invoices.length} invoices`;
+    }
+    function renderReports() {
+      const months = getMonthlyActivity();
+      const income = sumType("income");
+      const expenses = sumType("expense");
+      const net = income - expenses;
+      document.getElementById("report-cards").innerHTML = `<article class="report-card"><small>Total recorded income</small><strong>${formatMoney(income)}</strong><span>All saved transactions</span></article><article class="report-card"><small>Total recorded expenses</small><strong>${formatMoney(expenses)}</strong><span>All saved transactions</span></article><article class="report-card"><small>Net recorded activity</small><strong>${formatMoney(net)}</strong><span>Income less expenses</span></article>`;
+      document.getElementById("monthly-report").innerHTML = months.slice().reverse().map(month => `<div class="report-list"><div><strong>${new Intl.DateTimeFormat("en-NG", { month: "long", year: "numeric" }).format(new Date(Number(month.key.slice(0, 4)), Number(month.key.slice(5)) - 1, 1))}</strong><small>Income ${formatMoney(month.income)} · Expenses ${formatMoney(month.expenses)}</small></div><strong>${formatMoney(month.income - month.expenses)}</strong></div>`).join("");
+    }
+    function renderAll() {
+      renderStats("stats-grid", "overview");
+      renderStats("transaction-stats", "transactions");
+      renderStats("invoice-stats", "invoices");
+      renderRecent(); renderChart(); renderMoneySummary(); renderTransactions(); renderInvoices(); renderReports();
+    }
+    function setView(view) {
+      document.querySelectorAll(".view").forEach(section => section.hidden = section.id !== `view-${view}`);
+      document.querySelectorAll(".nav-item").forEach(button => button.classList.toggle("active", button.dataset.view === view));
+      const labels = { overview: "Overview", transactions: "Transactions", invoices: "Invoices", reports: "Reports", settings: "Settings" };
+      document.getElementById("crumb-label").textContent = labels[view] || "Overview";
+      if (location.hash !== `#${view}`) history.replaceState(null, "", `#${view}`);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message; toast.hidden = false;
+      clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.hidden = true, 3000);
+    }
+    function openModal(type) {
+      const overlay = document.getElementById("modal-overlay");
+      const transactionForm = document.getElementById("transaction-form");
+      const invoiceForm = document.getElementById("invoice-form");
+      const isInvoice = type === "invoice";
+      transactionForm.hidden = isInvoice; invoiceForm.hidden = !isInvoice;
+      document.getElementById("modal-title").textContent = isInvoice ? "Create invoice" : "Add transaction";
+      document.getElementById("modal-description").textContent = isInvoice ? "Add an invoice to your customer receivables." : "Record a business payment or receipt.";
+      if (isInvoice) {
+        document.getElementById("inv-date").value = dateOffset(0);
+        document.getElementById("inv-due").value = dateOffset(14);
+      } else {
+        transactionForm.reset();
+        document.getElementById("tx-date").value = dateOffset(0);
+      }
+      overlay.hidden = false;
+      (isInvoice ? document.getElementById("inv-customer") : document.getElementById("tx-description")).focus();
+    }
+    function closeModal() { document.getElementById("modal-overlay").hidden = true; }
+    function exportCsv() {
+      const rows = [["ID", "Date", "Type", "Description", "Category", "Account", "Amount (NGN)"]];
+      sortRecent(data.transactions).forEach(item => rows.push([item.id, item.date, item.type, item.description, item.category, item.account, Number(item.amount).toFixed(2)]));
+      const csv = rows.map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(",")).join("\r\n");
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a"); link.href = url; link.download = "emf-transactions.csv"; link.click();
+      URL.revokeObjectURL(url); showToast("Transaction CSV downloaded.");
+    }
+
+    document.getElementById("workspace-name").textContent = WORKSPACE_NAME;
+    document.getElementById("today-label").textContent = new Intl.DateTimeFormat("en-NG", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).format(new Date());
+    document.querySelectorAll(".nav-item").forEach(button => button.addEventListener("click", () => setView(button.dataset.view)));
+    document.querySelectorAll("[data-goto]").forEach(link => link.addEventListener("click", event => { event.preventDefault(); setView(link.dataset.goto); }));
+    document.querySelectorAll("[data-action]").forEach(button => button.addEventListener("click", () => {
+      const action = button.dataset.action;
+      if (action === "new-transaction") openModal("transaction");
+      if (action === "new-invoice") openModal("invoice");
+      if (action === "export-csv") exportCsv();
+      if (action === "reset-demo" && confirm("Restore the original sample data? This will remove entries added in this browser.")) {
+        data = makeDemoData(); saveData(); renderAll(); showToast("Sample data restored.");
+      }
+    }));
+    document.querySelectorAll("[data-close-modal]").forEach(button => button.addEventListener("click", closeModal));
+    document.getElementById("modal-overlay").addEventListener("click", event => { if (event.target.id === "modal-overlay") closeModal(); });
+    document.addEventListener("keydown", event => { if (event.key === "Escape") closeModal(); });
+    document.getElementById("transaction-search").addEventListener("input", renderTransactions);
+    document.getElementById("transaction-filter").addEventListener("change", renderTransactions);
+    document.getElementById("invoice-search").addEventListener("input", renderInvoices);
+    document.getElementById("transaction-form").addEventListener("submit", event => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      const type = form.get("type");
+      const item = {
+        id: `TX-${data.nextTransaction++}`,
+        date: form.get("date"), type,
+        description: String(form.get("description")).trim(),
+        category: form.get("category"), account: form.get("account"),
+        amount: Number(form.get("amount")), status: "Recorded"
+      };
+      if (!item.amount || item.amount <= 0) return;
+      data.transactions.push(item); saveData(); closeModal(); renderAll(); showToast("Transaction saved to this browser.");
+    });
+    document.getElementById("invoice-form").addEventListener("submit", event => {
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      const invoice = {
+        id: `EMF-${data.nextInvoice++}`,
+        customer: String(form.get("customer")).trim(),
+        amount: Number(form.get("amount")),
+        date: form.get("date"), due: form.get("due"),
+        description: String(form.get("description")).trim(), status: "pending"
+      };
+      if (!invoice.amount || invoice.amount <= 0 || invoice.due < invoice.date) {
+        showToast("Check the invoice amount and dates, then try again."); return;
+      }
+      data.invoices.push(invoice); saveData(); closeModal(); renderAll(); showToast("Invoice saved to this browser.");
+    });
+    document.getElementById("invoice-rows").addEventListener("click", event => {
+      const button = event.target.closest("[data-mark-paid]");
+      if (!button) return;
+      const invoice = data.invoices.find(row => row.id === button.dataset.markPaid);
+      if (!invoice || invoice.status === "paid") return;
+      invoice.status = "paid";
+      data.transactions.push({ id: `TX-${data.nextTransaction++}`, invoiceId: invoice.id, description: `Payment received: ${invoice.customer}`, date: dateOffset(0), type: "income", category: "Service revenue", account: "Business bank", amount: invoice.amount, status: "Recorded" });
+      saveData(); renderAll(); showToast(`${invoice.id} marked paid. Income transaction added.`);
+    });
+    const initialView = location.hash.slice(1);
+    setView(["overview", "transactions", "invoices", "reports", "settings"].includes(initialView) ? initialView : "overview");
+    renderAll();
+  </script>
+</body>
+</html>
